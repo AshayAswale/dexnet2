@@ -18,7 +18,7 @@ DATA = os.getenv('DEXNET_DATA')
 arrays = {}
 # datapoint = '_05590.npz'                #Enter datapoint here (anywhere between _00000 and _06728, there are a total of 6.7 million datapoints i.e, 6728 x 1000). Change this value to just '.npz' to train on entire dataset
 for filename in os.listdir(DATA):
-    for npz_file_number in range (2):   #Depending on number of examples just change the range.
+    for npz_file_number in range (5990):   #Depending on number of examples just change the range.
         data = '_{0:05}.npz'.format(npz_file_number)
         #print(data)
         if filename.endswith(data):
