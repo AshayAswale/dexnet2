@@ -13,12 +13,12 @@ import os
 DATA = os.getenv('DEXNET_DATA')
 #print(DATA)   
 
-
+##################################################################################################################
 
 arrays = {}
 # datapoint = '_05590.npz'                #Enter datapoint here (anywhere between _00000 and _06728, there are a total of 6.7 million datapoints i.e, 6728 x 1000). Change this value to just '.npz' to train on entire dataset
 for filename in os.listdir(DATA):
-    for npz_file_number in range (5990):   #Depending on number of examples just change the range.
+    for npz_file_number in range (6500):   #Depending on number of examples just change the range.
         data = '_{0:05}.npz'.format(npz_file_number)
         #print(data)
         if filename.endswith(data):
@@ -32,8 +32,12 @@ for array in arrays:
     features[array] = feature
 print(features.keys())
 
+####################################################################################################################
+
 
 # #Inputs to feed into CNN
+
+
 aligned_imgs = features['depth_ims_tf']
 # print(aligned_imgs.shape)
 gripper_depths = features['hand_poses'][:, 2]          #aligned_imgs and gripper_depths are the "X" of our model (Refer to gqcnn/Data/README.md for more info)
@@ -42,10 +46,32 @@ grasp_metrics = features['robust_ferrari_canny']       #Y of our model (Grasp me
 
 #Verify shapes 
 
-print(grasp_metrics.shape)
-print(gripper_depths.shape)
-print(aligned_imgs.shape)
+# print(gripper_depths)
+# print(grasp_metrics.shape)
+# print(grasp_metrics)
+# print(gripper_depths.shape)
+# print(aligned_imgs.shape)
 
+
+
+#******************One hot encoding***********************
+
+# print(grasp_metrics[2])
+def one_hot_encoding(grasp_metrics):
+    for i in range(1000):
+        if(grasp_metrics[i] > 0.002):  #threshold value is 0.002 readme
+            grasp_metrics[i] = 1
+        else:
+            grasp_metrics[i] = 0
+    return grasp_metrics
+
+grasp_metrics = one_hot_encoding(grasp_metrics)
+
+# print(grasp_metrics)
+
+
+
+#######################################################################################################################
 
 import tensorflow as tf
 import math
@@ -117,18 +143,24 @@ first_model = getDexnet2Model()
 
 first_model.summary()
 
+##################################################################################################################
+
 first_model.compile(loss='sparse_categorical_crossentropy', optimizer='Adam', metrics=['accuracy'])
 
 from keras.callbacks import ModelCheckpoint
 
-checkpointer = ModelCheckpoint(filepath='weights/first_model.weights.best.hdf5', verbose = 1, save_best_only=True)
+checkpointer = ModelCheckpoint(filepath='/home/gqcnn_ws/src/first_model.weights.best.hdf5', verbose = 1, save_best_only=True)
 x_train = [aligned_imgs, gripper_depths]                                   #Check model.summary() in previous section and check model architecture in paper
 y_train = grasp_metrics                                                    #valued between [0, 1] grasp robustness for the given grasp
 first_model.fit(x_train,
           y_train,
-          batch_size=8,                                                   #worth ecperimenting
+          batch_size=16,                                                   #worth ecperimenting
           epochs=10,                                      
-          validation_split=0.2,                                            #Decide on a number
-          callbacks=[checkpointer])                                        #CHange the filepath of the checkpointer varianble to store different version of weights.
+          validation_split=0.25,                                            #Decide on a number
+          callbacks=[checkpointer])        
 
+                                #CHange the filepath of the checkpointer varianble to store different version of weights.
+
+
+# first_model.predict(aligned_imgs[290])
 
